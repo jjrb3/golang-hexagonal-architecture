@@ -28,7 +28,7 @@ func NewCourseID(value string) (CourseID, error) {
 	}, nil
 }
 
-func (id CourseID) string() string {
+func (id CourseID) String() string {
 	return id.value
 }
 
@@ -100,7 +100,7 @@ func (duration CourseDuration) String() string {
 // CourseRepository defines the  expected behaviour from a course storage.
 type CourseRepository interface {
 	Save(ctx context.Context, course Course) error
-	FindAll() ([]Course, error)
+	//FindAll() ([]Course, error)
 }
 
 //go:generate mockery --case=snake --outpkg=storagemocks --output=platform/storage/storagemocks --name=CourseRepository
@@ -137,16 +137,16 @@ func NewCourse(id, name, duration string) (Course, error) {
 }
 
 // ID returns the course unique identifier.
-func (c Course) ID() string {
-	return c.id.value
+func (c Course) ID() CourseID {
+	return c.id
 }
 
 // Name returns the course name.
-func (c Course) Name() string {
-	return c.name.value
+func (c Course) Name() CourseName {
+	return c.name
 }
 
 // Duration returns the course duration.
-func (c Course) Duration() string {
-	return c.duration.value
+func (c Course) Duration() CourseDuration {
+	return c.duration
 }
