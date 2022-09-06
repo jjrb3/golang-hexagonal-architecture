@@ -28,8 +28,7 @@ func TestHandler_Create(t *testing.T) {
 
 	t.Run("Given an invalid request it returns 400", func(t *testing.T) {
 		createCourseReq := createRequest{
-			ID:   "8a1c5cdc-ba57-445a-994d-aa412d23723f",
-			Name: "Demo Course",
+			Name: "Demo",
 		}
 
 		b, err := json.Marshal(createCourseReq)
@@ -49,7 +48,6 @@ func TestHandler_Create(t *testing.T) {
 
 	t.Run("Invalid request by course date names", func(t *testing.T) {
 		createCourseReq := createRequest{
-			ID:       "8a1c5cdc-ba57-445a-994d-aa412d23723f",
 			Name:     "Demo Curse",
 			Duration: "10 MONT",
 		}
@@ -71,7 +69,6 @@ func TestHandler_Create(t *testing.T) {
 
 	t.Run("Given a valid request it returns 201", func(t *testing.T) {
 		createCourseReq := createRequest{
-			ID:       "8a1c5cdc-ba57-445a-994d-aa412d23723f",
 			Name:     "Demo Course",
 			Duration: "10 months",
 		}

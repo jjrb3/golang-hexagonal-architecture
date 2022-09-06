@@ -11,6 +11,7 @@ import (
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/storage/storagemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +26,7 @@ func TestHandler_FindAll(t *testing.T) {
 		var expected = generateCoursesResponse(courses)
 
 		courseRepository := new(storagemocks.CourseRepository)
-		courseRepository.On("FindAll").Return(courses, nil)
+		courseRepository.On("FindAll", mock.Anything).Return(courses, nil)
 
 		r.GET("/courses", FindAllHandler(courseRepository))
 
@@ -54,7 +55,7 @@ func TestHandler_FindAll(t *testing.T) {
 		var courses []mooc.Course
 
 		courseRepository := new(storagemocks.CourseRepository)
-		courseRepository.On("FindAll").Return(courses, mooc.ErrEmptyDuration)
+		courseRepository.On("FindAll", mock.Anything).Return(courses, mooc.ErrEmptyDuration)
 
 		r.GET("/courses", FindAllHandler(courseRepository))
 
