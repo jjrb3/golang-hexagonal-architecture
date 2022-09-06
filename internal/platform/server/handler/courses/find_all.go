@@ -16,7 +16,7 @@ type courseResponse struct {
 // FindAllHandler returns an HTTP handler with all courses.
 func FindAllHandler(courseRepository mooc.CourseRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		courses, err := courseRepository.FindAll()
+		courses, err := courseRepository.FindAll(ctx)
 
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
@@ -27,9 +27,9 @@ func FindAllHandler(courseRepository mooc.CourseRepository) gin.HandlerFunc {
 
 		for _, course := range courses {
 			cr = append(cr, courseResponse{
-				ID:       course.ID(),
-				Name:     course.Name(),
-				Duration: course.Duration(),
+				ID:       course.ID().String(),
+				Name:     course.Name().String(),
+				Duration: course.Duration().String(),
 			})
 		}
 

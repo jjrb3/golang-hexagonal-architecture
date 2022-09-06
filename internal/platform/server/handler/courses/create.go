@@ -1,7 +1,6 @@
 package courses
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,19 +18,27 @@ func CreateHandler(courseRepository mooc.CourseRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req createRequest
 		if err := ctx.BindJSON(&req); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error":  err.Error(),
+				"status": http.StatusBadRequest,
+			})
 			return
 		}
 
 		course, err := mooc.NewCourse(req.ID, req.Name, req.Duration)
 		if err != nil {
-			log.Println(err.Error())
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error":  err.Error(),
+				"status": http.StatusBadRequest,
+			})
 			return
 		}
 
 		if err = courseRepository.Save(ctx, course); err != nil {
-			ctx.JSON(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error":  err.Error(),
+				"status": http.StatusBadRequest,
+			})
 			return
 		}
 

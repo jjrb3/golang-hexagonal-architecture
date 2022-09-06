@@ -80,9 +80,9 @@ func generateCoursesResponse(courses []mooc.Course) []courseResponse {
 
 	for _, course := range courses {
 		res = append(res, courseResponse{
-			ID:       course.ID(),
-			Name:     course.Name(),
-			Duration: course.Duration(),
+			ID:       course.ID().String(),
+			Name:     course.Name().String(),
+			Duration: course.Duration().String(),
 		})
 	}
 
