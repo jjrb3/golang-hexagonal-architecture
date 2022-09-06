@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/huandu/go-sqlbuilder"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
@@ -42,17 +41,37 @@ func (r *CourseRepository) Save(ctx context.Context, course mooc.Course) error {
 	return nil
 }
 
+// FindAll return all courses.
 func (r *CourseRepository) FindAll(ctx context.Context) ([]mooc.Course, error) {
 	sb := sqlbuilder.NewStruct(new(sqlCourse))
 
 	query, args := sb.SelectFrom(sqlCourseTable).Build()
 
-	records, err := r.db.ExecContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return []mooc.Course{}, err
+		return nil, err
 	}
 
-	log.Println(records)
+	defer rows.Close()
 
-	return []mooc.Course{}, nil
+	var courses []mooc.Course
+
+	for rows.Next() {
+		var sc sqlCourse
+		var course mooc.Course
+
+		err = rows.Scan(&sc.ID, &sc.Name, &sc.Duration)
+		if err != nil {
+			return nil, err
+		}
+
+		course, err = mooc.NewCourse(sc.ID, sc.Name, sc.Duration)
+		if err != nil {
+			return nil, err
+		}
+
+		courses = append(courses, course)
+	}
+
+	return courses, nil
 }

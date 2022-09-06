@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
 )
 
 type createRequest struct {
-	ID       string `json:"id" binding:"required"`
 	Name     string `json:"name" binding:"required"`
 	Duration string `json:"duration" binding:"required"`
 }
@@ -25,7 +25,7 @@ func CreateHandler(courseRepository mooc.CourseRepository) gin.HandlerFunc {
 			return
 		}
 
-		course, err := mooc.NewCourse(req.ID, req.Name, req.Duration)
+		course, err := mooc.NewCourse(uuid.New().String(), req.Name, req.Duration)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"error":  err.Error(),

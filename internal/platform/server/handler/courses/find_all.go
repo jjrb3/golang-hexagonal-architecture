@@ -19,7 +19,10 @@ func FindAllHandler(courseRepository mooc.CourseRepository) gin.HandlerFunc {
 		courses, err := courseRepository.FindAll(ctx)
 
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error":  err.Error(),
+				"status": http.StatusBadRequest,
+			})
 			return
 		}
 
