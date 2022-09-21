@@ -17,42 +17,62 @@ const (
 	courseDuration = "10 months"
 )
 
-func TestCourseRepository_Save_Error(t *testing.T) {
-	course, err := mooc.NewCourse(courseID, courseName, courseDuration)
-	require.NoError(t, err)
+func TestCourseRepository_Save(t *testing.T) {
+	t.Run("Error saving information", func(t *testing.T) {
+		course, err := mooc.NewCourse(courseID, courseName, courseDuration)
+		require.NoError(t, err)
 
-	db, sqlMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
-	require.NoError(t, err)
+		db, sqlMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
 
-	sqlMock.ExpectExec(
-		"INSERT INTO courses (id, name, duration) VALUES (?, ?, ?)").
-		WithArgs(courseID, courseName, courseDuration).
-		WillReturnError(errors.New("something-failed"))
+		sqlMock.ExpectExec(
+			"INSERT INTO courses (id, name, duration) VALUES (?, ?, ?)").
+			WithArgs(courseID, courseName, courseDuration).
+			WillReturnError(errors.New("something-failed"))
 
-	repo := NewCourseRepository(db)
+		repo := NewCourseRepository(db)
 
-	err = repo.Save(context.Background(), course)
+		err = repo.Save(context.Background(), course)
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-	assert.Error(t, err)
+		assert.NoError(t, sqlMock.ExpectationsWereMet())
+		assert.Error(t, err)
+	})
+
+	t.Run("Success saving information", func(t *testing.T) {
+		course, err := mooc.NewCourse(courseID, courseName, courseDuration)
+		require.NoError(t, err)
+
+		db, sqlMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+
+		sqlMock.ExpectExec(
+			"INSERT INTO courses (id, name, duration) VALUES (?, ?, ?)").
+			WithArgs(courseID, courseName, courseDuration).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+
+		repo := NewCourseRepository(db)
+
+		err = repo.Save(context.Background(), course)
+
+		assert.NoError(t, sqlMock.ExpectationsWereMet())
+		assert.NoError(t, err)
+	})
 }
 
-func TestCourseRepository_Save_Succeed(t *testing.T) {
-	course, err := mooc.NewCourse(courseID, courseName, courseDuration)
-	require.NoError(t, err)
+func TestCourseRepository_FindAll(t *testing.T) {
+	t.Run("Success find all information", func(t *testing.T) {
+		db, sqlMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
 
-	db, sqlMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
-	require.NoError(t, err)
+		sqlMock.ExpectExec(
+			"SELECT courses.id, courses.name, courses.duration FROM courses").
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
-	sqlMock.ExpectExec(
-		"INSERT INTO courses (id, name, duration) VALUES (?, ?, ?)").
-		WithArgs(courseID, courseName, courseDuration).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+		repo := NewCourseRepository(db)
 
-	repo := NewCourseRepository(db)
+		_, err = repo.FindAll(context.Background())
 
-	err = repo.Save(context.Background(), course)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-	assert.NoError(t, err)
+		assert.NoError(t, sqlMock.ExpectationsWereMet())
+		assert.NoError(t, err)
+	})
 }

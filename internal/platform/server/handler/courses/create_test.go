@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jjrb3/golang-hexagonal-architecture/internal/creating"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/storage/storagemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,9 +23,11 @@ func TestHandler_Create(t *testing.T) {
 		mock.AnythingOfType("mooc.Course"),
 	).Return(nil)
 
+	creatingCourseService := creating.NewCourseService(courseRepository)
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/courses", CreateHandler(courseRepository))
+	r.POST("/courses", CreateHandler(creatingCourseService))
 
 	t.Run("Given an invalid request it returns 400", func(t *testing.T) {
 		createCourseReq := createRequest{

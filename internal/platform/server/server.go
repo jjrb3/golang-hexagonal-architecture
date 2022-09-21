@@ -6,24 +6,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
+	"github.com/jjrb3/golang-hexagonal-architecture/internal/creating"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/server/handler/courses"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/server/handler/health"
 )
 
 type Server struct {
-	httpAddr string
 	engine   *gin.Engine
+	httpAddr string
 
 	// deps.
-	courseRepository mooc.CourseRepository
+	createCourseService creating.CourseService
+	courseRepository    mooc.CourseRepository
 }
 
-func New(host string, port uint, courseRepository mooc.CourseRepository) Server {
+func New(host string, port uint, courseRepository mooc.CourseRepository, creatingCourseService creating.CourseService) Server {
 	srv := Server{
 		engine:   gin.New(),
 		httpAddr: fmt.Sprintf("%s:%d", host, port),
 
-		courseRepository: courseRepository,
+		createCourseService: creatingCourseService,
+		courseRepository:    courseRepository,
 	}
 
 	srv.registerRoutes()
@@ -37,6 +40,6 @@ func (s *Server) Run() error {
 
 func (s *Server) registerRoutes() {
 	s.engine.GET("/health", health.CheckHandler())
-	s.engine.POST("/course", courses.CreateHandler(s.courseRepository))
+	s.engine.POST("/course", courses.CreateHandler(s.createCourseService))
 	s.engine.GET("/courses", courses.FindAllHandler(s.courseRepository))
 }
