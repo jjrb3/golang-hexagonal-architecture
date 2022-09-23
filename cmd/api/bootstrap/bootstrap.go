@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/creating"
+	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/bus/inmemory"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/server"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/storage/mysql"
 )
@@ -30,10 +31,17 @@ func Run() error {
 		return err
 	}
 
+	var (
+		commandBus = inmemory.NewCommandBus()
+	)
+
 	courseRepository := mysql.NewCourseRepository(db)
 
 	creatingCourseService := creating.NewCourseService(courseRepository)
 
-	srv := server.New(host, port, courseRepository, creatingCourseService)
+	createCourseCommandHandler := creating.NewCourseCommanderHandler(creatingCourseService)
+	commandBus.Register(creating.CourseCommandType, createCourseCommandHandler)
+
+	srv := server.New(host, port, courseRepository, commandBus)
 	return srv.Run()
 }

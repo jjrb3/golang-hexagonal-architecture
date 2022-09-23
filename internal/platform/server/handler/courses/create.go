@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/creating"
+	"github.com/jjrb3/golang-hexagonal-architecture/kit/command"
 )
 
 type createRequest struct {
@@ -17,7 +18,7 @@ type createRequest struct {
 }
 
 // CreateHandler returns an HTTP handler for courses creation.
-func CreateHandler(createCourseService creating.CourseService) gin.HandlerFunc {
+func CreateHandler(commandBus command.Bus) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req createRequest
 		if err := ctx.BindJSON(&req); err != nil {
@@ -28,7 +29,11 @@ func CreateHandler(createCourseService creating.CourseService) gin.HandlerFunc {
 			return
 		}
 
-		err := createCourseService.CreateCourse(ctx, uuid.New().String(), req.Name, req.Duration)
+		err := commandBus.Dispatch(ctx, creating.NewCourseCommand(
+			uuid.New().String(),
+			req.Name,
+			req.Duration,
+		))
 
 		if err != nil {
 			switch {
