@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/huandu/go-sqlbuilder"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
@@ -11,13 +12,15 @@ import (
 
 // CourseRepository is a MySQL mooc.CourseRepository implementation.
 type CourseRepository struct {
-	db *sql.DB
+	db        *sql.DB
+	dbTimeout time.Duration
 }
 
 // NewCourseRepository initialize a MySQL-based implementation of mooc.CourseRepository.
-func NewCourseRepository(db *sql.DB) *CourseRepository {
+func NewCourseRepository(db *sql.DB, dbTimeout time.Duration) *CourseRepository {
 	return &CourseRepository{
-		db: db,
+		db:        db,
+		dbTimeout: dbTimeout,
 	}
 }
 
@@ -33,7 +36,10 @@ func (r *CourseRepository) Save(ctx context.Context, course mooc.Course) error {
 		},
 	).Build()
 
-	_, err := r.db.ExecContext(ctx, query, args...)
+	ctxTimeout, cancel := context.WithTimeout(ctx, r.dbTimeout)
+	defer cancel()
+
+	_, err := r.db.ExecContext(ctxTimeout, query, args...)
 	if err != nil {
 		return fmt.Errorf("error trying to persist course on database: %v", err)
 	}
@@ -47,7 +53,10 @@ func (r *CourseRepository) FindAll(ctx context.Context) ([]mooc.Course, error) {
 
 	query, args := sb.SelectFrom(sqlCourseTable).Build()
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	ctxTimeout, cancel := context.WithTimeout(ctx, r.dbTimeout)
+	defer cancel()
+
+	rows, err := r.db.QueryContext(ctxTimeout, query, args...)
 	if err != nil {
 		return nil, err
 	}
