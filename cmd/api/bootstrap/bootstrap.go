@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -42,6 +43,6 @@ func Run() error {
 	createCourseCommandHandler := creating.NewCourseCommanderHandler(creatingCourseService)
 	commandBus.Register(creating.CourseCommandType, createCourseCommandHandler)
 
-	srv := server.New(host, port, courseRepository, commandBus)
-	return srv.Run()
+	ctx, srv := server.New(context.Background(), host, port, courseRepository, commandBus)
+	return srv.Run(ctx)
 }
