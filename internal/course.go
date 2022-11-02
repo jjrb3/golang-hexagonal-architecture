@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jjrb3/golang-hexagonal-architecture/kit/event"
 	"strings"
 
 	"github.com/google/uuid"
@@ -110,6 +111,8 @@ type Course struct {
 	id       CourseID
 	name     CourseName
 	duration CourseDuration
+
+	events []event.Event
 }
 
 // NewCourse creates a new course.
@@ -129,11 +132,17 @@ func NewCourse(id, name, duration string) (Course, error) {
 		return Course{}, err
 	}
 
-	return Course{
+	course := Course{
 		id:       idVO,
 		name:     nameVO,
 		duration: durationVO,
-	}, nil
+	}
+
+	course.Record(
+		NewCourseCreatedEvent(idVO.String(), nameVO.String(), durationVO.String()),
+	)
+
+	return course, nil
 }
 
 // ID returns the course unique identifier.
@@ -149,4 +158,17 @@ func (c Course) Name() CourseName {
 // Duration returns the course duration.
 func (c Course) Duration() CourseDuration {
 	return c.duration
+}
+
+// Record records a new domain event.
+func (c *Course) Record(evt event.Event) {
+	c.events = append(c.events, evt)
+}
+
+// PullEvents returns all the recorded domain events.
+func (c Course) PullEvents() []event.Event {
+	etv := c.events
+	c.events = []event.Event{}
+
+	return etv
 }

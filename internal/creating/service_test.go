@@ -3,6 +3,7 @@ package creating
 import (
 	"context"
 	"errors"
+	"github.com/jjrb3/golang-hexagonal-architecture/kit/event/eventmocks"
 	"testing"
 
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
@@ -24,7 +25,8 @@ func Test_CourseService_CreateCourse_RepositoryError(t *testing.T) {
 	courseRepositoryMock := new(storagemocks.CourseRepository)
 	courseRepositoryMock.On("Save", mock.Anything, course).Return(errors.New("something unexpected happened"))
 
-	courseService := NewCourseService(courseRepositoryMock)
+	eventBusMock := new(eventmocks.Bus)
+	courseService := NewCourseService(courseRepositoryMock, eventBusMock)
 
 	err = courseService.CreateCourse(context.Background(), courseID, courseName, courseDuration)
 
@@ -43,10 +45,31 @@ func Test_CourseService_CreateCourse_Succeed(t *testing.T) {
 	courseRepositoryMock := new(storagemocks.CourseRepository)
 	courseRepositoryMock.On("Save", mock.Anything, course).Return(nil)
 
-	courseService := NewCourseService(courseRepositoryMock)
+	eventBusMock := new(eventmocks.Bus)
+	courseService := NewCourseService(courseRepositoryMock, eventBusMock)
 
 	err = courseService.CreateCourse(context.Background(), courseID, courseName, courseDuration)
 
 	courseRepositoryMock.AssertExpectations(t)
 	assert.NoError(t, err)
+}
+
+func Test_CourseService_CreateCourse_EventsBusError(t *testing.T) {
+	courseID := "37a0f027-15e6-47cc-a5d2-64183281087e"
+	courseName := "Test Course"
+	courseDuration := "10 months"
+
+	courseRepositoryMock := new(storagemocks.CourseRepository)
+	courseRepositoryMock.On("Save", mock.Anything, mock.AnythingOfType("mooc.Course")).Return(nil)
+
+	eventBusMock := new(eventmocks.Bus)
+	eventBusMock.On("Publish", mock.Anything, mock.AnythingOfType("[]event.Event")).Return(errors.New("something unexpected happened"))
+
+	courseService := NewCourseService(courseRepositoryMock, eventBusMock)
+
+	err := courseService.CreateCourse(context.Background(), courseID, courseName, courseDuration)
+
+	courseRepositoryMock.AssertExpectations(t)
+	eventBusMock.AssertExpectations(t)
+	assert.Error(t, err)
 }

@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
+	"github.com/jjrb3/golang-hexagonal-architecture/internal/increasing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/creating"
@@ -16,11 +19,12 @@ const (
 	host = "localhost"
 	port = 3000
 
-	dbUser = "root"
-	dbPass = "root"
-	dbHost = "localhost"
-	dbPort = "3306"
-	dbName = "codely"
+	dbUser    = "root"
+	dbPass    = "root"
+	dbHost    = "localhost"
+	dbPort    = "3306"
+	dbName    = "codely"
+	dbTimeout = 5 * time.Second
 
 	driverMySQL = "mysql"
 )
@@ -34,14 +38,21 @@ func Run() error {
 
 	var (
 		commandBus = inmemory.NewCommandBus()
+		eventBus   = inmemory.NewEventBus()
 	)
 
-	courseRepository := mysql.NewCourseRepository(db)
+	courseRepository := mysql.NewCourseRepository(db, dbTimeout)
 
-	creatingCourseService := creating.NewCourseService(courseRepository)
+	creatingCourseService := creating.NewCourseService(courseRepository, eventBus)
+	increasingCourseCounterService := increasing.NewCourseCounterService()
 
 	createCourseCommandHandler := creating.NewCourseCommanderHandler(creatingCourseService)
 	commandBus.Register(creating.CourseCommandType, createCourseCommandHandler)
+
+	eventBus.Subscribe(
+		mooc.CourseCreatedEventType,
+		creating.NewIncreaseCoursesCounterOnCourseCreated(increasingCourseCounterService),
+	)
 
 	ctx, srv := server.New(context.Background(), host, port, courseRepository, commandBus)
 	return srv.Run(ctx)
