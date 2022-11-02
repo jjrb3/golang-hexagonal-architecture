@@ -6,6 +6,7 @@ import (
 	"fmt"
 	mooc "github.com/jjrb3/golang-hexagonal-architecture/internal"
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/increasing"
+	"github.com/kelseyhightower/envconfig"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -15,23 +16,38 @@ import (
 	"github.com/jjrb3/golang-hexagonal-architecture/internal/platform/storage/mysql"
 )
 
-const (
-	host = "localhost"
-	port = 3000
-
-	dbUser    = "root"
-	dbPass    = "root"
-	dbHost    = "localhost"
-	dbPort    = "3306"
-	dbName    = "codely"
-	dbTimeout = 5 * time.Second
-
-	driverMySQL = "mysql"
-)
+type config struct {
+	// Server configuration.
+	Host            string        `default:"localhost"`
+	Port            uint          `default:"3000"`
+	ShutdownTimeout time.Duration `default:"10s"`
+	// Database configuration.
+	DBUser    string        `default:"root"`
+	DBPass    string        `default:"root"`
+	DBHost    string        `default:"localhost"`
+	DBPort    uint          `default:"3306"`
+	DBName    string        `default:"codely"`
+	DBTimeout time.Duration `default:"5s"`
+	// Drivers.
+	DriverMySQL string `default:"mysql"`
+}
 
 func Run() error {
-	mysqlURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
-	db, err := sql.Open(driverMySQL, mysqlURI)
+	var cfg config
+	err := envconfig.Process("MOOC", &cfg)
+	if err != nil {
+		return err
+	}
+
+	mysqlURI := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s",
+		cfg.DBUser,
+		cfg.DBPass,
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
+	)
+	db, err := sql.Open(cfg.DriverMySQL, mysqlURI)
 	if err != nil {
 		return err
 	}
@@ -41,7 +57,7 @@ func Run() error {
 		eventBus   = inmemory.NewEventBus()
 	)
 
-	courseRepository := mysql.NewCourseRepository(db, dbTimeout)
+	courseRepository := mysql.NewCourseRepository(db, cfg.DBTimeout)
 
 	creatingCourseService := creating.NewCourseService(courseRepository, eventBus)
 	increasingCourseCounterService := increasing.NewCourseCounterService()
@@ -54,6 +70,6 @@ func Run() error {
 		creating.NewIncreaseCoursesCounterOnCourseCreated(increasingCourseCounterService),
 	)
 
-	ctx, srv := server.New(context.Background(), host, port, courseRepository, commandBus)
+	ctx, srv := server.New(context.Background(), cfg.Host, cfg.Port, courseRepository, commandBus)
 	return srv.Run(ctx)
 }
